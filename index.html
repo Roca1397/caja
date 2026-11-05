@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b3a6e">
+<link rel="manifest" href="/static/manifest.json">
+<link rel="apple-touch-icon" href="/static/icon-192.png">
+<title>Consultas Siniestros</title>
+<style>
+:root{--azul:#0b3a6e;--azul2:#1d5fa8;--fondo:#eef2f7;--txt:#1b2430;--gris:#6b7685;--ok:#1a7f4b;--warn:#b26a00;--bad:#b3261e;--card:#fff}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--fondo);color:var(--txt)}
+header{background:var(--azul);color:#fff;padding:16px;position:sticky;top:0;z-index:2}
+header h1{font-size:18px;margin:0}header p{margin:2px 0 0;font-size:12px;opacity:.8}
+.demo{background:#fff4d6;color:#7a5300;font-size:12px;text-align:center;padding:6px}
+main{padding:14px;max-width:560px;margin:auto}
+.chat{display:flex;flex-direction:column;gap:10px}
+.b{max-width:88%;padding:10px 12px;border-radius:14px;line-height:1.35;font-size:15px;white-space:normal}
+.bot{background:var(--card);align-self:flex-start;border-top-left-radius:4px;box-shadow:0 1px 2px #0001}
+.yo{background:var(--azul2);color:#fff;align-self:flex-end;border-top-right-radius:4px}
+.ops{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.ops button{border:1px solid var(--azul2);background:#fff;color:var(--azul2);padding:9px 12px;border-radius:20px;font-size:14px;text-align:left}
+.ops button:active{background:var(--azul2);color:#fff}
+.caso{border-left:4px solid var(--gris);padding-left:8px;margin:6px 0}
+.caso b{display:block}.est{font-weight:700}
+.PAGADO{color:var(--ok)}.PENDIENTE{color:var(--warn)}.RECHAZADO,.NO{color:var(--bad)}
+ol{margin:6px 0 0;padding-left:20px}li{margin:3px 0}
+form[hidden]{display:none}
+form{display:flex;gap:8px;position:sticky;bottom:0;background:var(--fondo);padding:10px 0}
+input{flex:1;padding:12px;border-radius:24px;border:1px solid #c7d0db;font-size:16px}
+form button{background:var(--azul);color:#fff;border:0;border-radius:24px;padding:0 18px;font-size:15px}
+</style>
+</head>
+<body>
+<header><h1>Consultas de Siniestros</h1><p>Uso interno · Gerentes y analistas</p></header>
+<div class="demo">PROTOTIPO CON DATOS FICTICIOS — DNI de prueba: 90000001 al 90000400</div>
+<main><div class="chat" id="chat"></div>
+<form id="f" hidden><input id="in" inputmode="numeric" placeholder="Escribe el DNI del asegurado" autocomplete="off"><button>Enviar</button></form>
+</main>
+<script>
+const chat=document.getElementById('chat'),f=document.getElementById('f'),inp=document.getElementById('in');
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const soles=n=>'S/ '+Number(n).toLocaleString('es-PE',{minimumFractionDigits:2,maximumFractionDigits:2});
+function msg(html,who='bot'){const d=document.createElement('div');d.className='b '+who;d.innerHTML=html;chat.appendChild(d);d.scrollIntoView({behavior:'smooth',block:'end'});return d}
+function opciones(list,cb){const d=msg('');const o=document.createElement('div');o.className='ops';
+ list.forEach(t=>{const b=document.createElement('button');b.textContent=t;b.onclick=()=>{o.querySelectorAll('button').forEach(x=>x.disabled=true);msg(esc(t),'yo');cb(t)};o.appendChild(b)});
+ d.replaceWith(o);o.scrollIntoView({behavior:'smooth',block:'end'})}
+const get=u=>fetch(u).then(r=>r.ok?r.json():Promise.reject(r));
+function menu(){f.hidden=true;msg('¿En qué te puedo ayudar?');
+ opciones(['1. Requisitos por seguro','2. Estado de siniestro (DNI)','3. Contactar a un asesor'],t=>{
+  if(t[0]=='1')requisitos();else if(t[0]=='2')pedirDni();else asesor()})}
+async function requisitos(){const ps=await get('/api/productos');msg('Elige el seguro:');
+ opciones(ps,async p=>{const cs=await get('/api/causas?producto='+encodeURIComponent(p));msg('¿Qué ocurrió?');
+  opciones(cs,async c=>{const ds=await get(`/api/requisitos?producto=${encodeURIComponent(p)}&causa=${encodeURIComponent(c)}`);
+   msg(`<b>Requisitos – ${esc(p)}</b><br><small>${esc(c)}</small><ol>${ds.map(d=>'<li>'+esc(d)+'</li>').join('')}</ol>`);fin()})})}
+function pedirDni(){msg('Escribe el DNI del asegurado:');f.hidden=false;inp.value='';inp.focus()}
+f.onsubmit=async e=>{e.preventDefault();const d=inp.value.trim();if(!d)return;msg(esc(d),'yo');f.hidden=true;
+ try{const rs=await get('/api/estado/'+encodeURIComponent(d));
+  if(!rs.length){msg('No encontré siniestros registrados para ese DNI.')}
+  else msg(`<b>${esc(rs[0].asegurado)}</b> · ${rs.length} caso(s)`+rs.map(r=>`<div class="caso"><b>${esc(r.producto)}</b><small>${esc(r.causa)}</small><br>
+   Estado: <span class="est ${esc(r.estado.split(' ')[0])}">${esc(r.estado)}</span> (al ${esc(r.fecha_estado)})<br>
+   Declarado: ${esc(r.fecha_declaracion)} · ${esc(r.agencia)}<br>Reclamado: ${soles(r.monto_reclamado)}${r.monto_indemnizado?'<br>Pagado: '+soles(r.monto_indemnizado):''}
+   ${r.documentos_pendientes?'<br><b>Falta presentar:</b> '+esc(r.documentos_pendientes):''}</div>`).join(''))
+ }catch(_){msg('DNI no válido. Intenta de nuevo.')}fin()}
+async function asesor(){const a=await get('/api/asesor');msg(`Un asesor de seguros te atenderá por WhatsApp:<br><a href="${esc(a.whatsapp)}" target="_blank" rel="noopener">Abrir chat con asesor</a>`);fin()}
+function fin(){opciones(['Volver al menú'],menu)}
+msg('Hola 👋 Soy el asistente de siniestros.');menu();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js');
+</script>
+</body>
+</html>
