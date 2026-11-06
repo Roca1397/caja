@@ -1,5 +1,7 @@
 """API + web (PWA) de prueba: Consultas de Siniestros. SOLO DATA FICTICIA."""
 import os
+import unicodedata
+from urllib.parse import quote
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy import create_engine, text
@@ -47,9 +49,21 @@ def estado(dni: str):
     return rows
 
 
+def _norm(s):  # mayusculas y sin tildes, para comparar nombres de seguros
+    return "".join(c for c in unicodedata.normalize("NFD", s.strip().upper()) if unicodedata.category(c) != "Mn")
+
+
+# ASESORES_WSP="VIDA CAJA=51911111111;ONCOLOGICO=51922222222;..."  (los seguros sin numero usan ASESOR_WSP)
+ASESORES_WSP = {_norm(k): v.strip() for k, _, v in
+                (p.partition("=") for p in os.environ.get("ASESORES_WSP", "").split(";") if "=" in p)}
+
+
 @app.get("/api/asesor")
-def asesor():
-    return {"whatsapp": f"https://wa.me/{ASESOR_WSP}?text=Hola,%20necesito%20ayuda%20con%20un%20siniestro"}
+def asesor(producto: str = ""):
+    numero = ASESORES_WSP.get(_norm(producto), ASESOR_WSP)
+    texto = f"Hola, necesito ayuda con un siniestro del seguro {producto}" if producto else \
+        "Hola, necesito ayuda con un siniestro"
+    return {"whatsapp": f"https://wa.me/{numero}?text={quote(texto)}"}
 
 
 PUBLICOS = {"index.html", "manifest.json", "sw.js", "icon-192.png", "icon-512.png"}

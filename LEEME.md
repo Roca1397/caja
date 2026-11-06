@@ -35,4 +35,9 @@ Notas del plan gratis: el servicio "se duerme" sin uso (la 1ra consulta tarda ~3
 y la base PostgreSQL gratis expira a los 30 días.
 
 ## Cambiar el número del asesor
-En Render → servicio → Environment → `ASESOR_WSP` (formato 51 + número, sin +).
+Al elegir "Contactar a un asesor" el chat pregunta el tipo de seguro y abre WhatsApp con el número de ese seguro.
+
+En Render → servicio → Environment:
+- `ASESORES_WSP`: un número por seguro, separados por `;`, con formato `SEGURO=51número`.
+  Ejemplo: `VIDA CAJA=51911111111;ONCOLOGICO=51922222222` (mayúsculas/tildes no importan).
+- `ASESOR_WSP`: número general, usado para los seguros que no estén en `ASESORES_WSP` (formato 51 + número, sin +).

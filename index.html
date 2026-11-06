@@ -61,7 +61,9 @@ f.onsubmit=async e=>{e.preventDefault();const d=inp.value.trim();if(!d)return;ms
    Declarado: ${esc(r.fecha_declaracion)} · ${esc(r.agencia)}<br>Reclamado: ${soles(r.monto_reclamado)}${r.monto_indemnizado?'<br>Pagado: '+soles(r.monto_indemnizado):''}
    ${r.documentos_pendientes?'<br><b>Falta presentar:</b> '+esc(r.documentos_pendientes):''}</div>`).join(''))
  }catch(_){msg('DNI no válido. Intenta de nuevo.')}fin()}
-async function asesor(){const a=await get('/api/asesor');msg(`Un asesor de seguros te atenderá por WhatsApp:<br><a href="${esc(a.whatsapp)}" target="_blank" rel="noopener">Abrir chat con asesor</a>`);fin()}
+async function asesor(){const ps=await get('/api/productos');msg('¿Sobre qué tipo de seguro necesitas ayuda?');
+ opciones(ps,async p=>{const a=await get('/api/asesor?producto='+encodeURIComponent(p));
+  msg(`Un asesor de <b>${esc(p)}</b> te atenderá por WhatsApp:<br><a href="${esc(a.whatsapp)}" target="_blank" rel="noopener">Abrir chat con asesor</a>`);fin()})}
 function fin(){opciones(['Volver al menú'],menu)}
 msg('Hola 👋 Soy el asistente de siniestros.');menu();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js');
