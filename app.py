@@ -8,7 +8,7 @@ from sqlalchemy import create_engine, text
 
 DB = os.environ.get("DATABASE_URL", "sqlite:///prueba.db").replace("postgres://", "postgresql://", 1)
 eng = create_engine(DB, pool_pre_ping=True)
-ASESOR_WSP = os.environ.get("ASESOR_WSP", "51999999999")  # numero ficticio
+ASESOR_WSP = os.environ.get("ASESOR_WSP", "51900000006")  # numero de asesores (todos los seguros)
 app = FastAPI(title="Consultas Siniestros (prueba)")
 
 

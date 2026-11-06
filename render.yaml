@@ -11,9 +11,7 @@ services:
           name: siniestros-demo-db
           property: connectionString
       - key: ASESOR_WSP
-        value: "51999999999"
-      - key: ASESORES_WSP
-        value: "AGRICOLA=51900000001;DESEMPLEO PROTECCION INTEGRAL=51900000002;DESGRAVAMEN INDIVIDUAL=51900000003;MULTIRRIESGO=51900000004;ONCOLOGICO=51900000005;PROTECCION DE TARJETAS=51900000006;RETIRO SEGURO=51900000007;VIDA CAJA=51900000008"
+        value: "51900000006"
 databases:
   - name: siniestros-demo-db
     plan: free
