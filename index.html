@@ -42,13 +42,15 @@ const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
 const soles=n=>'S/ '+Number(n).toLocaleString('es-PE',{minimumFractionDigits:2,maximumFractionDigits:2});
 function msg(html,who='bot'){const d=document.createElement('div');d.className='b '+who;d.innerHTML=html;chat.appendChild(d);d.scrollIntoView({behavior:'smooth',block:'end'});return d}
 function opciones(list,cb){const d=msg('');const o=document.createElement('div');o.className='ops';
- list.forEach(t=>{const b=document.createElement('button');b.textContent=t;b.onclick=()=>{o.querySelectorAll('button').forEach(x=>x.disabled=true);msg(esc(t),'yo');cb(t)};o.appendChild(b)});
+ // los botones nunca se bloquean: al tocar uno se borra lo que vino despues y se sigue desde esa eleccion
+ list.forEach(t=>{const b=document.createElement('button');b.textContent=t;b.onclick=()=>{gen++;f.hidden=true;
+  while(o.nextSibling)o.nextSibling.remove();msg(esc(t),'yo');cb(t)};o.appendChild(b)});
  d.replaceWith(o);o.scrollIntoView({behavior:'smooth',block:'end'});return o}
-const get=u=>fetch(u).then(r=>r.ok?r.json():Promise.reject(r));
+let gen=0; // descarta respuestas que llegan tarde de una eleccion anterior
+const get=u=>{const g=gen;return fetch(u).then(r=>r.ok?r.json():Promise.reject(r)).then(j=>g==gen?j:new Promise(()=>{}))};
 let menuIni;
 function menu(){f.hidden=true;
- if(menuIni){while(menuIni.nextSibling)menuIni.nextSibling.remove();
-  menuIni.querySelectorAll('button').forEach(x=>x.disabled=false);window.scrollTo({top:0,behavior:'smooth'});return}
+ if(menuIni){gen++;while(menuIni.nextSibling)menuIni.nextSibling.remove();window.scrollTo({top:0,behavior:'smooth'});return}
  msg('¿En qué te puedo ayudar?');
  menuIni=opciones(['1. Requisitos por seguro','2. Estado de siniestro (DNI)','3. Contactar a un asesor'],t=>{
   if(t[0]=='1')requisitos();else if(t[0]=='2')pedirDni();else asesor()})}
