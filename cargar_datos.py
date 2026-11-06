@@ -18,8 +18,12 @@ ESTADOS = [("PAGADO", 50), ("EN PROCESO POR ASEGURADORA", 15), ("PENDIENTE CLIEN
            ("NO ATENDIDO", 7), ("CERRADO ADMINISTRATIVAMENTE", 5)]
 ASESORES = ["ASESOR DEMO NORTE", "ASESOR DEMO SUR", "ASESOR DEMO LIMA", "ASESOR DEMO CENTRO"]
 
-req = list(csv.DictReader(open("data/requisitos.csv", encoding="utf-8")))
-ags = list(csv.DictReader(open("data/agencias.csv", encoding="utf-8")))
+def ruta(n):  # funciona con los CSV en la raiz o dentro de data/
+    return n if os.path.exists(n) else os.path.join("data", n)
+
+
+req = list(csv.DictReader(open(ruta("requisitos.csv"), encoding="utf-8")))
+ags = list(csv.DictReader(open(ruta("agencias.csv"), encoding="utf-8")))
 prod_causa = sorted({(r["producto"], r["causa"]) for r in req})
 
 with eng.begin() as c:

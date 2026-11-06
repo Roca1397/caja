@@ -1,7 +1,6 @@
 """API + web (PWA) de prueba: Consultas de Siniestros. SOLO DATA FICTICIA."""
 import os
 from fastapi import FastAPI, HTTPException
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from sqlalchemy import create_engine, text
 
@@ -53,14 +52,25 @@ def asesor():
     return {"whatsapp": f"https://wa.me/{ASESOR_WSP}?text=Hola,%20necesito%20ayuda%20con%20un%20siniestro"}
 
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+PUBLICOS = {"index.html", "manifest.json", "sw.js", "icon-192.png", "icon-512.png"}
+
+
+def archivo(n):  # funciona con los archivos en la raiz o dentro de static/
+    return n if os.path.exists(n) else os.path.join("static", n)
+
+
+@app.get("/static/{nombre}")
+def estaticos(nombre: str):
+    if nombre not in PUBLICOS:
+        raise HTTPException(404)
+    return FileResponse(archivo(nombre))
 
 
 @app.get("/")
 def index():
-    return FileResponse("static/index.html")
+    return FileResponse(archivo("index.html"))
 
 
 @app.get("/sw.js")
 def sw():
-    return FileResponse("static/sw.js", media_type="application/javascript")
+    return FileResponse(archivo("sw.js"), media_type="application/javascript")
