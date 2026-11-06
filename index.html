@@ -11,7 +11,10 @@
 :root{--azul:#0b3a6e;--azul2:#1d5fa8;--fondo:#eef2f7;--txt:#1b2430;--gris:#6b7685;--ok:#1a7f4b;--warn:#b26a00;--bad:#b3261e;--card:#fff}
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--fondo);color:var(--txt)}
 header{background:var(--azul);color:#fff;padding:16px;position:sticky;top:0;z-index:2}
-header h1{font-size:18px;margin:0}header p{margin:2px 0 0;font-size:12px;opacity:.8}
+header h1{font-size:18px;margin:0}
+nav{display:flex;gap:6px;margin-top:10px}
+nav button{flex:1;border:1px solid #ffffff80;background:transparent;color:#fff;padding:8px 4px;border-radius:18px;font-size:13px;line-height:1.2}
+nav button.on{background:#fff;color:var(--azul);font-weight:600}header p{margin:2px 0 0;font-size:12px;opacity:.8}
 .demo{background:#fff4d6;color:#7a5300;font-size:12px;text-align:center;padding:6px}
 main{padding:14px;max-width:560px;margin:auto}
 .chat{display:flex;flex-direction:column;gap:10px}
@@ -32,7 +35,8 @@ form button{background:var(--azul);color:#fff;border:0;border-radius:24px;paddin
 </style>
 </head>
 <body>
-<header><h1>Consultas de Siniestros</h1></header>
+<header><h1>Consultas de Siniestros</h1>
+<nav id="nav"><button data-op="1">Requisitos</button><button data-op="2">Estado (DNI)</button><button data-op="3">Asesor</button></nav></header>
 <main><div class="chat" id="chat"></div>
 <form id="f" hidden><input id="in" inputmode="numeric" placeholder="Escribe el DNI del asegurado" autocomplete="off"><button>Enviar</button></form>
 </main>
@@ -44,14 +48,18 @@ function msg(html,who='bot'){const d=document.createElement('div');d.className='
 function opciones(list,cb){const d=msg('');const o=document.createElement('div');o.className='ops';
  list.forEach(t=>{const b=document.createElement('button');b.textContent=t;b.onclick=()=>{o.querySelectorAll('button').forEach(x=>x.disabled=true);msg(esc(t),'yo');cb(t)};o.appendChild(b)});
  d.replaceWith(o);o.scrollIntoView({behavior:'smooth',block:'end'});return o}
-const get=u=>fetch(u).then(r=>r.ok?r.json():Promise.reject(r));
-let menuIni;
-function menu(){f.hidden=true;
- if(menuIni){while(menuIni.nextSibling)menuIni.nextSibling.remove();
-  menuIni.querySelectorAll('button').forEach(x=>x.disabled=false);window.scrollTo({top:0,behavior:'smooth'});return}
- msg('¿En qué te puedo ayudar?');
- menuIni=opciones(['1. Requisitos por seguro','2. Estado de siniestro (DNI)','3. Contactar a un asesor'],t=>{
-  if(t[0]=='1')requisitos();else if(t[0]=='2')pedirDni();else asesor()})}
+let gen=0; // al cambiar de opcion se ignoran las respuestas pendientes del flujo anterior
+const get=u=>{const g=gen;return fetch(u).then(r=>r.ok?r.json():Promise.reject(r)).then(j=>g==gen?j:new Promise(()=>{}))};
+const OPS=['1. Requisitos por seguro','2. Estado de siniestro (DNI)','3. Contactar a un asesor'];
+const nav=document.getElementById('nav');
+// empieza la opcion elegida desde cero (desde la barra de arriba o desde el menu del chat)
+function elegir(t){gen++;f.hidden=true;chat.innerHTML='';
+ nav.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.op==t[0]));
+ msg(esc(t),'yo');if(t[0]=='1')requisitos();else if(t[0]=='2')pedirDni();else asesor()}
+nav.querySelectorAll('button').forEach(b=>b.onclick=()=>elegir(OPS[b.dataset.op-1]));
+function menu(){msg('Hola 👋 Soy el asistente de siniestros.<br>¿En qué te puedo ayudar?');
+ const d=msg('');const o=document.createElement('div');o.className='ops';
+ OPS.forEach(t=>{const b=document.createElement('button');b.textContent=t;b.onclick=()=>elegir(t);o.appendChild(b)});d.replaceWith(o)}
 async function requisitos(){const ps=await get('/api/productos');msg('Elige el seguro:');
  opciones(ps,async p=>{const cs=await get('/api/causas?producto='+encodeURIComponent(p));msg('¿Qué ocurrió?');
   opciones(cs,async c=>{const ds=await get(`/api/requisitos?producto=${encodeURIComponent(p)}&causa=${encodeURIComponent(c)}`);
@@ -68,8 +76,8 @@ f.onsubmit=async e=>{e.preventDefault();const d=inp.value.trim();if(!d)return;ms
 async function asesor(){const ps=await get('/api/productos');msg('¿Sobre qué tipo de seguro necesitas ayuda?');
  opciones([...ps,'Otras consultas'],async p=>{const a=await get('/api/asesor?producto='+encodeURIComponent(p));
   msg(`${p=='Otras consultas'?'Un asesor':'Un asesor de <b>'+esc(p)+'</b>'} te atenderá por WhatsApp:<br><a href="${esc(a.whatsapp)}" target="_blank" rel="noopener">Abrir chat con asesor</a>`);fin()})}
-function fin(){opciones(['Volver al menú'],menu)}
-msg('Hola 👋 Soy el asistente de siniestros.');menu();
+function fin(){msg('<small>Puedes elegir otra opción en la barra de arriba.</small>')}
+menu();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js');
 </script>
 </body>
