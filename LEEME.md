@@ -40,4 +40,5 @@ Al elegir "Contactar a un asesor" el chat pregunta el tipo de seguro y abre What
 En Render → servicio → Environment:
 - `ASESORES_WSP`: un número por seguro, separados por `;`, con formato `SEGURO=51número`.
   Ejemplo: `VIDA CAJA=51911111111;ONCOLOGICO=51922222222` (mayúsculas/tildes no importan).
+- `OTRAS_WSP`: número de la opción "Otras consultas" (por defecto 51943764390).
 - `ASESOR_WSP`: número general, usado para los seguros que no estén en `ASESORES_WSP` (formato 51 + número, sin +).

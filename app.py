@@ -58,8 +58,13 @@ ASESORES_WSP = {_norm(k): v.strip() for k, _, v in
                 (p.partition("=") for p in os.environ.get("ASESORES_WSP", "").split(";") if "=" in p)}
 
 
+OTRAS_WSP = os.environ.get("OTRAS_WSP", "51943764390")  # opcion "Otras consultas" del menu asesor
+
+
 @app.get("/api/asesor")
 def asesor(producto: str = ""):
+    if _norm(producto) == "OTRAS CONSULTAS":
+        return {"whatsapp": f"https://wa.me/{OTRAS_WSP}?text={quote('Hola, tengo una consulta')}"}
     numero = ASESORES_WSP.get(_norm(producto), ASESOR_WSP)
     texto = f"Hola, necesito ayuda con un siniestro del seguro {producto}" if producto else \
         "Hola, necesito ayuda con un siniestro"
